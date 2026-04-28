@@ -1,29 +1,25 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from scalar_fastapi import get_scalar_api_reference
+from app.routers import periodes, registrations, queue_settings
+from app.routers.queue_management import router as queue_router
+from app.websocket import manager
 from app.database import init_database
+from app.exceptions import QueueAPIException, queue_exception_handler
 import uvicorn
 
-app = FastAPI()
+app = FastAPI(title="Queue Management API", description="Professional API modular structure", version="1.0.0")
 
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: list[WebSocket] = []
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
+                   allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], allow_headers=["*"])
 
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
+app.include_router(periodes.router, prefix="/api", tags=["periodes"])
+app.include_router(registrations.router, prefix="/api", tags=["registrations"])
+app.include_router(queue_settings.router, prefix="/api", tags=["queue-settings"])
+app.include_router(queue_router, prefix="/api")
 
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-manager = ConnectionManager()
+app.add_exception_handler(QueueAPIException, queue_exception_handler)
 
 @app.get("/scalar")
 def get_scalar():
@@ -32,6 +28,10 @@ def get_scalar():
 @app.get("/")
 def root():
     return {"message": "Queue Management API", "version": "1.0.0", "docs": "/scalar", "structure": "modular"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -46,4 +46,4 @@ async def websocket_endpoint(websocket: WebSocket):
 init_database()
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
