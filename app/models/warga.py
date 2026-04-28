@@ -1,48 +1,17 @@
-from pydantic import BaseModel, Field
-from typing import Optional
-from datetime import datetime
+from sqlalchemy import Column, String, Integer, DateTime
+from ..database import Base
 
-class WargaBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
-    kk_number: str = Field(..., min_length=16, max_length=16)
-    rt_rw: str = Field(..., min_length=1, max_length=50, pattern=r'^\d{3}:\d{3}$')
-    periode_id: str
-
-class WargaCreate(WargaBase):
-    pass
-
-class WargaUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    kk_number: Optional[str] = Field(None, min_length=16, max_length=16)
-    rt_rw: Optional[str] = Field(None, min_length=1, max_length=50, pattern=r'^\d{3}:\d{3}$')
-    status: Optional[str] = Field(None, pattern=r'^(waiting|serving|served|pending)$')
-
-class WargaResponse(BaseModel):
-    id: str
-    name: str
-    kk_number: str
-    rt_rw: str
-    referral_code: str
-    queue_number: int
-    status: str
-    created_at: str
-    updated_at: str
-    periode_id: str
+# SQLAlchemy Base Model - represents database table
+class Warga(Base):
+    __tablename__ = 'warga'
     
-    class Config:
-        from_attributes = True
-
-class Warga(BaseModel):
-    id: str
-    name: str
-    kk_number: str
-    rt_rw: str
-    referral_code: str
-    queue_number: int
-    status: str
-    created_at: str
-    updated_at: str
-    periode_id: str
-    
-    class Config:
-        from_attributes = True
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    kk_number = Column(String, nullable=False)
+    rt_rw = Column(String, nullable=False)
+    referral_code = Column(String, nullable=False)
+    queue_number = Column(Integer, nullable=False)
+    status = Column(String, nullable=False)
+    periode_id = Column(String, nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)

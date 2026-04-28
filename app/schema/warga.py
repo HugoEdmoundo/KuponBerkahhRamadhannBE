@@ -1,20 +1,20 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from typing import Optional
 from datetime import datetime
 
 class WargaBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     kk_number: str = Field(..., min_length=16, max_length=16)
-    rt_rw: str = Field(..., min_length=1, max_length=50)
+    rt_rw: str = Field(..., min_length=1, max_length=50, pattern=r'^\d{3}:\d{3}$')
     periode_id: str
 
 class WargaCreate(WargaBase):
-    pass
+    pass    
 
 class WargaUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     kk_number: Optional[str] = Field(None, min_length=16, max_length=16)
-    rt_rw: Optional[str] = Field(None, min_length=1, max_length=50)
+    rt_rw: Optional[str] = Field(None, min_length=1, max_length=50, pattern=r'^\d{3}:\d{3}$')
     status: Optional[str] = Field(None, pattern=r'^(waiting|serving|served|pending)$')
 
 class WargaResponse(BaseModel):
@@ -25,9 +25,13 @@ class WargaResponse(BaseModel):
     referral_code: str
     queue_number: int
     status: str
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
     periode_id: str
+    
+    @field_serializer('created_at', 'updated_at')
+    def serialize_datetime(self, value: datetime) -> str:
+        return value.isoformat()
     
     class Config:
         from_attributes = True
