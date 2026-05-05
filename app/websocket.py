@@ -1,33 +1,34 @@
-from pydantic import BaseModel, Field
-from typing import Optional
-from datetime import datetime
+from fastapi import WebSocket
+from typing import List
+import asyncio
 
-class WargaBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
-    kk_number: str = Field(..., min_length=16, max_length=16)
-    rt_rw: str = Field(..., min_length=1, max_length=50)
-    periode_id: str
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
 
-class WargaCreate(WargaBase):
-    pass
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
 
-class WargaUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    kk_number: Optional[str] = Field(None, min_length=16, max_length=16)
-    rt_rw: Optional[str] = Field(None, min_length=1, max_length=50)
-    status: Optional[str] = Field(None, pattern=r'^(waiting|serving|served|pending)$')
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
 
-class WargaResponse(BaseModel):
-    id: str
-    name: str
-    kk_number: str
-    rt_rw: str
-    referral_code: str
-    queue_number: int
-    status: str
-    created_at: str
-    updated_at: str
-    periode_id: str
-    
-    class Config:
-        from_attributes = True
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections[:]:
+            try:
+                await connection.send_text(message)
+            except:
+                self.active_connections.remove(connection)
+
+def broadcast_websocket(message):
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(manager.broadcast(message))
+    except RuntimeError:
+        pass
+
+manager = ConnectionManager()
