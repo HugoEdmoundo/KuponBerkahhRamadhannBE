@@ -22,7 +22,7 @@ API_KEY = os.getenv("API_KEY", "")
 class APIKeyMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
 
-        if request.url.path in ["/", "/health", "/scalar"]:
+        if request.url.path in ["/", "/health", "/scalar", "openapi.json"]:
             return await call_next(request)
         
         # Get API key from header
@@ -37,7 +37,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         
         return await call_next(request)
 
-app = FastAPI(title="Queue Management API", description="Professional API modular structure", version="1.0.0")
+app = FastAPI(title="Queue Management API", description="Professional API modular structure", version="1.0.0", docs_url=None, redoc_url=None)
 
 # Add API Key Middleware (must be before CORS)
 app.add_middleware(APIKeyMiddleware)
