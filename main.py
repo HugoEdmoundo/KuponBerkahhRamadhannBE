@@ -22,7 +22,7 @@ API_KEY = os.getenv("API_KEY", "")
 class APIKeyMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
 
-        if request.url.path in ["/", "/health", "/scalar", "openapi.json"]:
+        if request.url.path in ["/", "/health", "/scalar", "/openapi.json"]:
             return await call_next(request)
         
         # Get API key from header
